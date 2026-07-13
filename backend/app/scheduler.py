@@ -115,7 +115,27 @@ async def _execute_node(
         await broadcast_status(workflow_run_id, node.id, "failed")
 
 
-def _build_input(node: NodeDefinition, run_input: Dict[str, Any], results: Dict[str, Any]) -> Dict[str, Any]:
+def _build_input(node, run_input, results):
+    """
+    Constructs the input payload for a specific node by pulling data 
+    from the initial run_input or from the outputs of upstream nodes.
+    """
+    node_input = {}
+    
+    for target_key, mapping_rules in node.input_mapping.items():
+        # Check if this input comes from the initial payload (e.g., POST body)
+        if "from_input" in mapping_rules:
+            source_key = mapping_rules["from_input"]
+            node_input[target_key] = run_input.get(source_key)
+            
+        # Check if this input comes from a previously executed node
+        elif "from_node" in mapping_rules:
+            source_node_id = mapping_rules["from_node"]
+            node_input[target_key] = results.get(source_node_id)
+            
+    return node_input
+
+# def _build_input(node: NodeDefinition, run_input: Dict[str, Any], results: Dict[str, Any]) -> Dict[str, Any]:
     """
     Assembles input dictionary for a node according to its input_mapping definitions.
     Example: 

@@ -7,6 +7,7 @@ engine = create_async_engine(
     settings.database_url, 
     echo=False,
     connect_args={
+        "statement_cache_size": 0,
         "prepared_statement_cache_size": 0  # Disables prepared statement caching for transaction poolers
     }
 )

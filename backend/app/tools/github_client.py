@@ -65,5 +65,9 @@ async def get_repos(node_input: dict) -> dict:
 
         return {
             "search_query": query,
-            "repositories": formatted_repos
+            "repositories": formatted_repos,
+            "sources": [
+                {"title": repo["name"], "url": repo["url"]} 
+                for repo in formatted_repos
+            ]
         }

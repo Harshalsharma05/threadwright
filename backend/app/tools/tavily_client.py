@@ -21,7 +21,7 @@ async def search_news(node_input: dict) -> dict:
     url = "https://api.tavily.com/search"
     payload = {
         "api_key": api_key,
-        "query": query,
+        "query": f"{query} competitors list market share",
         "search_depth": "basic",
         "include_answer": False,
         "max_results": 5
@@ -50,5 +50,9 @@ async def search_news(node_input: dict) -> dict:
 
         return {
             "query": query,
-            "results": formatted_results
+            "results": formatted_results,
+            "sources": [
+                {"title": item["title"], "url": item["url"]} 
+                for item in formatted_results
+            ]
         }
