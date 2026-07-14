@@ -14,3 +14,5 @@ frontend/dist/
 .env
 .env.*
 !.env.example
+
+Implementation_plan.md
