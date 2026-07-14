@@ -1,7 +1,7 @@
 # Threadwright — Async DAG Orchestration Engine
 
-[![Live Demo](https://img.shields.io/badge/Demo-Live-success?style=for-the-badge)](https://threadwright-demo.vercel.app/)
-[![Backend API](https://img.shields.io/badge/API-Deployed-blue?style=for-the-badge)](https://threadwright-backend.onrender.com/)
+[![Live Demo](https://img.shields.io/badge/Demo-Live-success?style=for-the-badge)](https://threadwright.vercel.app/)
+[![Backend API](https://img.shields.io/badge/API-Deployed-blue?style=for-the-badge)](https://threadwright.onrender.com/health)
 
 An asynchronous, directed acyclic graph (DAG) workflow engine built from the ground up to orchestrate parallel data-gathering pipelines. It processes concurrent web, developer, and social inputs to generate targeted corporate research dossiers and candidate interview preparation blueprints.
 
