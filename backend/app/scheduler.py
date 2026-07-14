@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import random
 from typing import Any, Dict
 from .models import GraphDefinition, NodeDefinition
 from .db import mark_node_running, mark_node_done, mark_node_failed, get_node_runs
@@ -81,6 +82,7 @@ async def _execute_node(
 ):
     """
     Handles state transition, dynamic input composition, execution, and output logging for a node.
+    Natively manages the retry loop to broadcast intermediate failure and backoff states to the UI.
     """
     handler = node_registry.get(node.handler)
     if not handler:
@@ -93,6 +95,8 @@ async def _execute_node(
     # Build node input using mapped values from initial input and prior results
     try:
         node_input = _build_input(node, run_input, results)
+        node_input["workflow_run_id"] = workflow_run_id
+        node_input["inject_failure"] = run_input.get("inject_failure", False)
     except Exception as e:
         error_msg = f"Failed to build input for node '{node.id}': {e}"
         logger.error(error_msg)
@@ -100,20 +104,46 @@ async def _execute_node(
         await broadcast_status(workflow_run_id, node.id, "failed")
         return
 
-    # Mark as running in Database and notify WebSocket
-    await mark_node_running(workflow_run_id, node.id, attempt=0)
-    await broadcast_status(workflow_run_id, node.id, "running")
+    attempt = 0
+    max_retries = node.max_retries
+    base_delay = 1.0
 
-    # Execute wrapped inside the retry handler
-    try:
-        result = await run_with_retry(handler, node_input, max_retries=node.max_retries)
-        await mark_node_done(workflow_run_id, node.id, result)
-        await broadcast_status(workflow_run_id, node.id, "done")
-        results[node.id] = result
-    except Exception as e:
-        await mark_node_failed(workflow_run_id, node.id, str(e))
-        await broadcast_status(workflow_run_id, node.id, "failed")
+    while True:
+        # 1. Start execution attempt: mark 'running' (turns Yellow on UI)
+        logger.info(f"Executing node {node.id} (Attempt {attempt + 1}/{max_retries + 1})")
+        await mark_node_running(workflow_run_id, node.id, attempt=attempt)
+        await broadcast_status(workflow_run_id, node.id, "running")
 
+        try:
+            # Run the actual node handler
+            result = await handler(node_input)
+            
+            # 2. Success: mark 'done' and notify UI (turns Green on UI)
+            await mark_node_done(workflow_run_id, node.id, result)
+            await broadcast_status(workflow_run_id, node.id, "done")
+            results[node.id] = result
+            break  # Exit retry loop on success
+
+        except Exception as e:
+            attempt += 1
+            if attempt > max_retries:
+                # 3. Permanent Failure: final write and notify UI (turns Red permanently)
+                logger.error(f"Node {node.id} failed permanently after {attempt} attempts. Error: {e}")
+                await mark_node_failed(workflow_run_id, node.id, str(e))
+                await broadcast_status(workflow_run_id, node.id, "failed")
+                break
+
+            # 4. Intermediate Failure: mark 'failed' and notify UI (turns Red during sleep)
+            error_msg = f"Attempt {attempt}/{max_retries + 1} failed: {e}"
+            logger.warning(f"Node {node.id} intermediate failure: {error_msg}")
+            
+            await mark_node_failed(workflow_run_id, node.id, error_msg)
+            await broadcast_status(workflow_run_id, node.id, "failed")
+
+            # Calculate backoff delay with jitter
+            delay = base_delay * (2 ** (attempt - 1)) + random.uniform(0, 0.3)
+            logger.warning(f"Node {node.id} sleeping for {delay:.2f}s before next attempt...")
+            await asyncio.sleep(delay)
 
 def _build_input(node, run_input, results):
     """

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useWorkflowSocket } from './hooks/useWorkflowSocket';
 import GraphView from './components/GraphView';
@@ -13,6 +13,28 @@ function App() {
   const [injectFailure, setInjectFailure] = useState(false);
   
   const statuses = useWorkflowSocket(runId);
+
+  useEffect(() => {
+    const hydrateRunMetadata = async () => {
+      if (runId && !company) {
+        try {
+          const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/runs/${runId}`);
+          if (res.data?.input_payload?.company_name) {
+            setCompany(res.data.input_payload.company_name);
+            
+            // Optional: If you also store job description, hydrate it here too:
+            if (res.data.input_payload.job_description) {
+              setJobDescription(res.data.input_payload.job_description);
+            }
+          }
+        } catch (err) {
+          console.error("Failed to restore workflow metadata on layout refresh", err);
+        }
+      }
+    };
+    
+    hydrateRunMetadata();
+  }, [runId]);
 
   const handleRun = async () => {
     if (!company.trim()) return;
@@ -46,8 +68,11 @@ return (
       {/* z-10 moves the actionable UI containers cleanly over the grid rows */}
       <div className="relative z-10 p-8 max-w-5xl mx-auto w-full">
         
-        <h1 className="text-4xl font-black mb-8 tracking-tight bg-gradient-to-r from-slate-100 to-slate-400 bg-clip-text text-transparent">
-          Threadwright
+        <h1 className="text-4xl md:text-5xl font-black mb-8 tracking-tighter flex items-center gap-2">
+            <span className="bg-gradient-to-r from-slate-400 to-green-400 bg-clip-text text-transparent drop-shadow-[0_0_12px_rgba(16,185,129,0.3)]">
+                Threadwright
+            </span>
+            <span className="text-emerald-500 animate-pulse font-mono font-light opacity-80">_</span>
         </h1>
         
         <DemoControls injectFailure={injectFailure} setInjectFailure={setInjectFailure} />
@@ -64,7 +89,7 @@ return (
             />
             <button
               onClick={handleRun}
-              className="bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-bold px-8 py-3 rounded-lg shadow-md transition-all border border-emerald-400/30 active:scale-[0.98]"
+              className="bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-bold px-8 py-3 rounded-lg shadow-md transition-all border border-emerald-400/30 active:scale-[0.98] cursor-pointer"
             >
               RUN_GRAPH
             </button>
@@ -78,21 +103,25 @@ return (
           />
         </div>
 
-        {runId && (
-          <div className="mt-8 transition-all">
-              <h2 className="text-sm font-mono text-slate-500 mb-4 tracking-widest">
-                RUN_TRACE_ID: <span className="text-slate-400">{runId}</span>
-              </h2>
-              
-              <GraphView statuses={statuses} runId={runId} />
-              
-              <ResultPanel 
-                  runId={runId} 
-                  synthesizeStatus={statuses['synthesize']}
-                  company={company}
-              />
-          </div>
-        )}
+        {/* The Execution Dashboard (Always visible, acts as skeleton when idle) */}
+        <div className="mt-8 transition-all w-full">
+            <h2 className="text-sm font-mono text-slate-500 mb-4 tracking-widest flex items-center gap-2">
+              RUN_TRACE_ID: 
+              {runId ? (
+                  <span className="text-slate-400">{runId}</span>
+              ) : (
+                  <span className="text-slate-700/50 italic animate-pulse">AWAITING_INPUT...</span>
+              )}
+            </h2>
+            
+            <GraphView statuses={statuses || {}} runId={runId} />
+            
+            <ResultPanel 
+                runId={runId} 
+                synthesizeStatus={statuses?.synthesize} 
+                company={company}
+            />
+        </div>
       </div>
     </div>
   );

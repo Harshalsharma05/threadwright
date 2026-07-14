@@ -7,15 +7,20 @@ export default function NodeBox({ label, status, icon, delay = "0ms", result }) 
     const hasSources = sources.length > 0;
 
     const statusConfig = {
+        idle: {
+            container: 'bg-slate-950/20 border-slate-800/30 text-slate-700',
+            indicator: 'bg-slate-800/50',
+            icon: 'text-slate-800/80'
+        },
         pending: {
             container: 'bg-slate-900/40 border-slate-700/50 text-slate-500',
             indicator: 'bg-slate-600',
             icon: 'text-slate-600'
         },
         running: {
-            container: 'bg-slate-800/80 border-emerald-500/50 text-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.15)] transform -translate-y-1',
-            indicator: 'bg-emerald-400 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.8)]',
-            icon: 'text-emerald-500 drop-shadow-[0_0_8px_rgba(16,185,129,0.8)]' // Added glow to the SVG
+            container: 'bg-slate-800/80 border-yellow-500/50 text-yellow-400 shadow-[0_0_15px_rgba(234,179,8,0.15)] transform -translate-y-1',
+            indicator: 'bg-yellow-400 animate-pulse shadow-[0_0_8px_rgba(234,179,8,0.8)]',
+            icon: 'text-yellow-500 drop-shadow-[0_0_8px_rgba(234,179,8,0.8)]' // Added glow to the SVG
         },
         done: {
             container: 'bg-slate-900/80 border-emerald-600 text-slate-200',
@@ -29,7 +34,8 @@ export default function NodeBox({ label, status, icon, delay = "0ms", result }) 
         }
     };
 
-    const currentStyle = statusConfig[status || 'pending'];
+    const currentStyle = statusConfig[status || 'idle'];
+    const isIdle = status === 'idle' || !status;
 
     return (
         <div className={`p-4 w-48 border rounded-xl backdrop-blur-sm transition-all duration-300 flex flex-col ${currentStyle.container} ${showSources ? 'z-[9999]' : 'z-10'}`}>
@@ -45,7 +51,7 @@ export default function NodeBox({ label, status, icon, delay = "0ms", result }) 
             <div className="flex flex-col items-center justify-center my-4 min-h-[60px]">
                 {icon && (
                     <div 
-                        className={`mb-3 animate-float transition-colors duration-300 ${currentStyle.icon}`}
+                        className={`mb-3 transition-colors duration-300 ${!isIdle && 'animate-float'}  ${currentStyle.icon}`}
                         style={{ animationDelay: delay }} // Staggers the floating effect
                     >
                         {icon}

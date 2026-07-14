@@ -4,6 +4,8 @@ from ..config import settings
 
 logger = logging.getLogger(__name__)
 
+_synthetic_failures: dict[str, int] = {}
+
 async def search_news(node_input: dict) -> dict:
     """
     Performs an asynchronous web search using the Tavily API.
@@ -13,6 +15,20 @@ async def search_news(node_input: dict) -> dict:
     query = node_input.get("query")
     if not query:
         raise ValueError("Missing required key 'query' in node input.")
+    
+    
+     # Stateful Fault Injection Logic
+    inject_failure = node_input.get("inject_failure", False)
+    run_id = node_input.get("workflow_run_id", "local-test")
+
+    if inject_failure:
+        current_fails = _synthetic_failures.get(run_id, 0)
+        if current_fails < 2:
+            _synthetic_failures[run_id] = current_fails + 1
+            logger.warning(f"[FAULT INJECTION] Simulating synthetic failure for run {run_id} (Attempt {current_fails + 1}/2)")
+            raise RuntimeError("Synthetic Connection Timeout (Simulated Downstream Error).")
+        else:
+            logger.info(f"[FAULT INJECTION] Attempt limit reached for run {run_id}. Allowing third attempt to pass.")
 
     api_key = settings.tavily_api_key
     if not api_key:

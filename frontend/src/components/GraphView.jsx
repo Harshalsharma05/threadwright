@@ -67,6 +67,9 @@ export default function GraphView({ statuses, runId }) {
         "M875,0 C875,60 500,60 500,120"
     ];
 
+    // If there is no runId, force all nodes to 'idle'
+    const getStatus = (id) => runId ? statuses[id] : 'idle';
+
     return (
         <div className="p-8 bg-slate-900/60 backdrop-blur-md border border-slate-800 rounded-xl overflow-hidden shadow-2xl mt-8 flex flex-col items-center">
             
@@ -102,10 +105,10 @@ export default function GraphView({ statuses, runId }) {
                 {/* Row 1: Parallel Workers */}
                 <div className="flex justify-between w-full relative z-50">
                     {/* We map status from 'statuses' (WebSocket), but result from 'nodeData' (REST API) */}
-                    <NodeBox {...nodes.search_news} status={statuses[nodes.search_news.id]} result={nodeData[nodes.search_news.id]?.result} />
-                    <NodeBox {...nodes.github_signal} status={statuses[nodes.github_signal.id]} result={nodeData[nodes.github_signal.id]?.result} />
-                    <NodeBox {...nodes.reddit_signal} status={statuses[nodes.reddit_signal.id]} result={nodeData[nodes.reddit_signal.id]?.result} />
-                    <NodeBox {...nodes.parse_job} status={statuses[nodes.parse_job.id]} result={nodeData[nodes.parse_job.id]?.result} />
+                    <NodeBox {...nodes.search_news} status={getStatus(nodes.search_news.id)} result={nodeData[nodes.search_news.id]?.result} />
+                    <NodeBox {...nodes.github_signal} status={getStatus(nodes.github_signal.id)} result={nodeData[nodes.github_signal.id]?.result} />
+                    <NodeBox {...nodes.reddit_signal} status={getStatus(nodes.reddit_signal.id)} result={nodeData[nodes.reddit_signal.id]?.result} />
+                    <NodeBox {...nodes.parse_job} status={getStatus(nodes.parse_job.id)} result={nodeData[nodes.parse_job.id]?.result} />
                 </div>
 
                 {/* SVG Connections Area */}
@@ -116,9 +119,9 @@ export default function GraphView({ statuses, runId }) {
                                 <path 
                                     d={d}
                                     fill="none" 
-                                    stroke={topRowDone ? "#059669" : "#334155"}
+                                    stroke={topRowDone ? "#059669" : (runId ? "#334155" : "#0f172a")}
                                     strokeWidth={topRowDone ? "3" : "2"}
-                                    className={!topRowDone ? "path-gathering" : "transition-colors duration-500"}
+                                    className={(runId && !topRowDone) ? "path-gathering" : "transition-colors duration-500"}
                                 />
                                 {topRowDone && (
                                     <path 
