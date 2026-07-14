@@ -15,10 +15,16 @@ logging.basicConfig(
 
 app = FastAPI(title="Threadwright Orchestration Engine", version="0.1.0")
 
+origins = [
+    "http://localhost:5173",        # Vite default local port
+    "http://localhost:3000",        # Alternative local port
+    "https://threadwright.vercel.app" # Your production frontend on Vercel
+]
+
 # Configure CORS Middleware for Frontend React routing
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Adjust in production environments
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
