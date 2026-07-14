@@ -10,39 +10,39 @@ import asyncio
 import logging
 import xml.etree.ElementTree as ET
 import httpx
-import praw
+# import praw
 from ..config import settings
 
 logger = logging.getLogger(__name__)
 
-def _praw_configured() -> bool:
-    """Checks if credentials for PRAW are available."""
-    return all([
-        settings.reddit_client_id,
-        settings.reddit_client_secret,
-        settings.reddit_user_agent
-    ])
+# def _praw_configured() -> bool:
+#     """Checks if credentials for PRAW are available."""
+#     return all([
+#         settings.reddit_client_id,
+#         settings.reddit_client_secret,
+#         settings.reddit_user_agent
+#     ])
 
-def _sync_praw_search(query: str) -> list[dict]:
-    """Uses official PRAW library to search Reddit (synchronously)."""
-    reddit = praw.Reddit(
-        client_id=settings.reddit_client_id,
-        client_secret=settings.reddit_client_secret,
-        user_agent=settings.reddit_user_agent
-    )
-    logger.info(f"Querying Reddit via PRAW for: '{query}'")
-    search_results = reddit.subreddit("all").search(query, sort="relevance", limit=5)
+# def _sync_praw_search(query: str) -> list[dict]:
+#     """Uses official PRAW library to search Reddit (synchronously)."""
+#     reddit = praw.Reddit(
+#         client_id=settings.reddit_client_id,
+#         client_secret=settings.reddit_client_secret,
+#         user_agent=settings.reddit_user_agent
+#     )
+#     logger.info(f"Querying Reddit via PRAW for: '{query}'")
+#     search_results = reddit.subreddit("all").search(query, sort="relevance", limit=5)
     
-    posts = []
-    for post in search_results:
-        posts.append({
-            "title": post.title,
-            "url": f"https://reddit.com{post.permalink}",
-            "score": post.score,
-            "num_comments": post.num_comments,
-            "source": "praw"
-        })
-    return posts
+#     posts = []
+#     for post in search_results:
+#         posts.append({
+#             "title": post.title,
+#             "url": f"https://reddit.com{post.permalink}",
+#             "score": post.score,
+#             "num_comments": post.num_comments,
+#             "source": "praw"
+#         })
+#     return posts
 
 
 async def _async_rss_search(query: str) -> list[dict]:
@@ -126,11 +126,11 @@ async def search_posts(node_input: dict) -> dict:
     posts = []
     
     # Pathway 1: Try official PRAW API
-    if _praw_configured():
-        try:
-            posts = await asyncio.to_thread(_sync_praw_search, query)
-        except Exception as e:
-            logger.error(f"PRAW search failed with exception: {e}. Falling back to RSS.")
+    # if _praw_configured():
+    #     try:
+    #         posts = await asyncio.to_thread(_sync_praw_search, query)
+    #     except Exception as e:
+    #         logger.error(f"PRAW search failed with exception: {e}. Falling back to RSS.")
 
     # Pathway 2: Try public RSS if PRAW is unconfigured or failed
     if not posts:
