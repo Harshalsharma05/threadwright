@@ -42,8 +42,8 @@ async def _call_llm(system_prompt: str, user_prompt: str) -> dict:
             "content-type": "application/json"
         }
         payload = {
-            "model": "claude-3-haiku-20240307",
-            "max_tokens": 2048,
+            "model": "claude-haiku-4-5-20251001",
+            "max_tokens": 4000,
             "system": system_prompt,
             "messages": [
                 {"role": "user", "content": user_prompt + "\nIMPORTANT: Return ONLY a valid, raw JSON object. No explanation."}
@@ -216,10 +216,10 @@ async def synthesize_brief(node_input: dict) -> dict:
     into a structured corporate intelligence brief.
     """
     # Grab upstream inputs
-    news_data = node_input.get("news", {})
-    github_data = node_input.get("github", {})
-    reddit_data = node_input.get("reddit", {})
-    job_data = node_input.get("jobs", {})
+    news_data = node_input.get("news_data", {})
+    github_data = node_input.get("github_data", {})
+    reddit_data = node_input.get("reddit_data", {})
+    job_data = node_input.get("job_data", {})
 
     system_prompt = (
         "You are an elite technical interview mentor and industry analyst. "
